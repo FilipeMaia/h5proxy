@@ -52,7 +52,12 @@ class Server(object):
             if(fname not in functions):            
                 raise RuntimeError("%s is not an available function",fname)
             # Do the actual function call with all the arguments
-            self._ser.send(functions[fname](**fc))        
+            if(fname == 'attrs'):
+                if 'path' not in fc:
+                    fc['path'] = None
+                self._ser.send(functions[fname](**fc),fc['fileName'],fc['path'])
+            else:
+                self._ser.send(functions[fname](**fc))        
         except EnvironmentError:
 #        except:
             ret = dict()
@@ -124,11 +129,14 @@ class Server(object):
     def values(self,fileName, path):
         return self.resolve(fileName, path).values()
 
-    def items(self,fileName, path):
-        return self.resolve(fileName, path).items()
+    def items(self,fileName, path, attrs):
+        return self.resolve(fileName, path, attrs).items()
 
-    def get(self,fileName, path, name, default, getclass, getlink):
-        return self.resolve(fileName, path).get(name, default, getclass, getlink)
+    def get(self,fileName, path, name, default, getclass, getlink, attrs):
+        if(attrs):
+            return self.resolve(fileName, path, attrs).get(name, default)
+        else:
+            return self.resolve(fileName, path, attrs).get(name, default, getclass, getlink)
 
 
 from .h5proxy import Dataset,Group,File,Attributes 

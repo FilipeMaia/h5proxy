@@ -1,5 +1,7 @@
 # By having the imports inside the function we only ask for the modules that we really need
 
+from h5proxy import Group, Dataset
+
 def startServer():
     import h5proxy
     server = h5proxy.Server()

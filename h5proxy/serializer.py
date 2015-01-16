@@ -48,21 +48,23 @@ class Serializer(object):
         return data
 
 
-    def send(self,data):
-        data, arrays = self._serialize(data, [])
-
+    def send(self,data, fileName = None, path = None):
+        data, arrays = self._serialize(data, [], fileName, path)
         flags = 0
+        print "%d arrays to send" % (len(arrays))
         if(len(arrays)):
             flags = zmq.SNDMORE
+        print "Sending data"
         self._socket.send(pickle.dumps(data), flags)
 
         for i in range(len(arrays)):
+            print "Sending array"
             # When sending the last array change the flag back
             if(i == len(arrays) -1):
                 flags = 0
             self._socket.send(arrays[i], flags)            
 
-    def _serialize(self, data, arrays):
+    def _serialize(self, data, arrays, fileName, path):
         if type(data) is h5py.Dataset:
             data = dict(
                 className = "Dataset",
@@ -78,6 +80,8 @@ class Serializer(object):
         elif type(data) is h5py.AttributeManager:
             data = dict(
                 className = "Attributes",
+                fileName = fileName,
+                path = path,
             )
         elif type(data) is h5py.File:
             data = dict(
@@ -96,11 +100,11 @@ class Serializer(object):
             # We need to sort to be able to receive any possible arrays
             # in the correct order
             for k in sorted(data.keys()):
-                data[k], arrays = self._serialize(data[k], arrays)
+                data[k], arrays = self._serialize(data[k], arrays, fileName, path)
         elif isinstance(data, list) or isinstance(data, tuple):
             ldata = [None]*len(data)
             for i in range(len(data)):
-                ldata[i], arrays = self._serialize(data[i], arrays)
+                ldata[i], arrays = self._serialize(data[i], arrays, fileName, path)
             data = type(data)(ldata)
         return data, arrays
 

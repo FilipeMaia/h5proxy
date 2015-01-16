@@ -16,6 +16,9 @@ class Base(object):
         return self._client.len(self._fileName, self._path)
     def __repr__(self):
         return self._client.repr(self._fileName, self._path)
+    @property
+    def attrs(self):
+        return self._client.attrs(self._fileName, self._path)
 
 class Group(Base):
     def create_group(self, name):
@@ -68,6 +71,11 @@ class Attributes(Base):
         return self._client.len(self._fileName, self._path, True)
     def __repr__(self):
         return self._client.repr(self._fileName, self._path, True)
+    def items(self):
+        return self._client.items(self._fileName, self._path, True)
+    def get(self, name, default=None, getclass=False, getlink=False):
+        return self._client.get(self._fileName, self._path, name, default, getclass, getlink, True)
+
 
 
 class File(Group):
@@ -104,9 +112,6 @@ class Dataset(Base):
     @property
     def shape(self):
         return self._client.shape(self._fileName, self._path)
-    @property
-    def attrs(self):
-        return self._client.attrs(self._fileName, self._path)
 
     def __array__(self,dtype=None):
         return self._client.array(self._fileName, self._path, dtype)
