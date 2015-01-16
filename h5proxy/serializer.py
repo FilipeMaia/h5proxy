@@ -40,7 +40,11 @@ class Serializer(object):
                 # in the correct order
                 for k in sorted(data.keys()):
                     data[k] = self._deserialize(data[k])
-                    
+        elif isinstance(data, list) or isinstance(data, tuple):
+            ldata = [None]*len(data)
+            for i in range(len(data)):
+                ldata[i] = self._deserialize(data[i])
+            data = type(data)(ldata)
         return data
 
 
@@ -79,7 +83,7 @@ class Serializer(object):
             data = dict(
                 className = "File",
                 fileName = data.file.filename,
-                path = "/"
+                path = ''
             )
         elif isinstance(data, numpy.ndarray):
             arrays.append(data)
@@ -93,6 +97,11 @@ class Serializer(object):
             # in the correct order
             for k in sorted(data.keys()):
                 data[k], arrays = self._serialize(data[k], arrays)
+        elif isinstance(data, list) or isinstance(data, tuple):
+            ldata = [None]*len(data)
+            for i in range(len(data)):
+                ldata[i], arrays = self._serialize(data[i], arrays)
+            data = type(data)(ldata)
         return data, arrays
 
 from .h5proxy import Dataset,Group,File,Attributes 

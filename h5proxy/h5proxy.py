@@ -14,6 +14,8 @@ class Base(object):
         return self._client.setitem(self._fileName, self._path, args, vals)
     def __len__(self):
         return self._client.len(self._fileName, self._path)
+    def __repr__(self):
+        return self._client.repr(self._fileName, self._path)
 
 class Group(Base):
     def create_group(self, name):
@@ -25,6 +27,36 @@ class Group(Base):
     def keys(self):
         return self._client.keys(self._fileName, self._path)
 
+    def __contains__(self, name):
+        return self._client.contains(self._fileName, self._path, name)
+
+    def values(self):
+        return self._client.values(self._fileName, self._path)
+
+    def items(self):
+        return self._client.items(self._fileName, self._path)
+
+    def __iter__(self):
+        for x in self.keys():
+            yield x
+
+    def iterkeys(self):
+        return iter(self)
+
+    def itervalues(self):
+        for x in self.keys():
+            yield self[x]
+
+    def iteritems(self):
+        for x in self.keys():
+            yield (x,self[x])
+
+    def get(self, name, default=None, getclass=False, getlink=False):
+        return self._client.get(self._fileName, self._path, name, default, getclass, getlink)
+
+
+
+
 class Attributes(Base):
     def keys(self):
         return self._client.keys(self._fileName, self._path,True)
@@ -34,6 +66,9 @@ class Attributes(Base):
         return self._client.setitem(self._fileName, self._path, args, vals, True)
     def __len__(self):
         return self._client.len(self._fileName, self._path, True)
+    def __repr__(self):
+        return self._client.repr(self._fileName, self._path, True)
+
 
 class File(Group):
     def __init__(self, locator, mode=None, driver=None, libver=None, userblock_size=None, **kwds):
@@ -42,6 +77,7 @@ class File(Group):
         ret = self._client.file_init(fileName=name, mode=mode, driver=driver, libver=libver, userblock_size=userblock_size, **kwds)
         self._fileName = ret['fileName']
         self._path = ret['path']
+
     def _parseLocator(self, name):
         # Search for the end of the host field
         i = name.find(':')
@@ -56,6 +92,10 @@ class File(Group):
                 return name[:i], int(name[i+1:i+j+1]), name[i+j+2:]
     def close(self):
         self._client.close(self._fileName)
+    @property
+    def mode(self):
+        return self._client.mode(self._fileName)
+
         
 class Dataset(Base):
     @property
@@ -71,7 +111,7 @@ class Dataset(Base):
     def __array__(self,dtype=None):
         return self._client.array(self._fileName, self._path, dtype)
 
-
+    
 from .client import Client
 from .server import Server
         
