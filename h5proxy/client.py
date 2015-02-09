@@ -1,13 +1,13 @@
-import zmq
-import threading
-
 class Client(object):
     def __init__(self, host, port):
-        self._context = zmq.Context()
-        self._socket = self._context.socket(zmq.REQ)
-        self._ser = Serializer(self, self._socket)
-        self._socket.connect("tcp://"+host+":"+str(port))
-        self.lock = threading.Lock()
+        if(host):
+            import zmq
+            self._context = zmq.Context()
+            self._socket = self._context.socket(zmq.REQ)
+            self._socket.connect("tcp://"+host+":"+str(port))
+            self._ser = Serializer(self, self._socket)
+        else:
+            self._ser = Serializer(self)
         
     def file_init(self, fileName,mode,driver,libver,userblock_size,**kwds):
         args = dict(
@@ -19,9 +19,7 @@ class Client(object):
             userblock_size = userblock_size,
             kwds = kwds
         )
-        with self.lock:
-            self._ser.send(args)
-            return self._ser.recv()
+        return self._ser.call(args)
    
     def create_dataset(self, fileName, path, name, shape, dtype, data, **kwds):
         args = dict(
@@ -34,9 +32,7 @@ class Client(object):
             data = data,
             kwds = kwds
         )
-        with self.lock:
-            self._ser.send(args)
-            return self._ser.recv()
+        return self._ser.call(args)
 
     def create_group(self, fileName, path, groupName):
         args = dict(
@@ -45,18 +41,14 @@ class Client(object):
             path = path,
             groupName = groupName
         )
-        with self.lock:
-            self._ser.send(args)
-            return self._ser.recv()
+        return self._ser.call(args)
 
     def close(self, fileName):
         args = dict(
             func = "close",
             fileName = fileName
         )
-        with self.lock:
-            self._ser.send(args)
-            return self._ser.recv()
+        return self._ser.call(args)
 
     def keys(self, fileName, path, attrs = False):
         args = dict(
@@ -65,9 +57,7 @@ class Client(object):
             path = path,
             attrs = attrs
         )
-        with self.lock:
-            self._ser.send(args)
-            return self._ser.recv()
+        return self._ser.call(args)
 
     def getitem(self, fileName, path, fargs, attrs = False):
         args = dict(
@@ -77,9 +67,7 @@ class Client(object):
             args = fargs,
             attrs = attrs
         )
-        with self.lock:
-            self._ser.send(args)
-            return self._ser.recv()
+        return self._ser.call(args)
 
     def setitem(self, fileName, path, fargs, vals, attrs = False):
         args = dict(
@@ -90,9 +78,7 @@ class Client(object):
             vals = vals,
             attrs = attrs
         )
-        with self.lock:
-            self._ser.send(args)
-            return self._ser.recv()
+        return self._ser.call(args)
 
     def shape(self, fileName, path):
         args = dict(
@@ -100,9 +86,7 @@ class Client(object):
             fileName = fileName,
             path = path
         )
-        with self.lock:
-            self._ser.send(args)
-            return self._ser.recv()
+        return self._ser.call(args)
 
     def len(self, fileName, path, attrs = False):
         args = dict(
@@ -111,9 +95,7 @@ class Client(object):
             path = path,
             attrs = attrs
         )
-        with self.lock:
-            self._ser.send(args)
-            return self._ser.recv()
+        return self._ser.call(args)
 
     def repr(self, fileName, path, attrs = False):
         args = dict(
@@ -122,9 +104,7 @@ class Client(object):
             path = path,
             attrs = attrs
         )
-        with self.lock:
-            self._ser.send(args)
-            return self._ser.recv()
+        return self._ser.call(args)
 
     def dtype(self, fileName, path):
         args = dict(
@@ -132,9 +112,7 @@ class Client(object):
             fileName = fileName,
             path = path
         )
-        with self.lock:
-            self._ser.send(args)
-            return self._ser.recv()
+        return self._ser.call(args)
 
     def attrs(self, fileName, path):
         args = dict(
@@ -142,9 +120,7 @@ class Client(object):
             fileName = fileName,
             path = path
         )
-        with self.lock:
-            self._ser.send(args)
-            return self._ser.recv()
+        return self._ser.call(args)
 
     def array(self, fileName, path, dtype):
         args = dict(
@@ -153,18 +129,14 @@ class Client(object):
             path = path,
             dtype = dtype
         )
-        with self.lock:
-            self._ser.send(args)
-            return self._ser.recv()
+        return self._ser.call(args)
 
     def mode(self, fileName):
         args = dict(
             func = "mode",
             fileName = fileName
         )
-        with self.lock:
-            self._ser.send(args)
-            return self._ser.recv()
+        return self._ser.call(args)
 
     def contains(self, fileName, path, name):
         args = dict(
@@ -173,9 +145,7 @@ class Client(object):
             path = path,
             name = name
         )
-        with self.lock:
-            self._ser.send(args)
-            return self._ser.recv()
+        return self._ser.call(args)
 
     def values(self, fileName, path):
         args = dict(
@@ -183,9 +153,7 @@ class Client(object):
             fileName = fileName,
             path = path
         )
-        with self.lock:
-            self._ser.send(args)
-            return self._ser.recv()
+        return self._ser.call(args)
 
     def items(self, fileName, path, attrs = False):
         args = dict(
@@ -194,9 +162,7 @@ class Client(object):
             path = path,
             attrs = attrs
         )
-        with self.lock:
-            self._ser.send(args)
-            return self._ser.recv()
+        return self._ser.call(args)
 
     def get(self, fileName, path, name, default=None, getclass=False, getlink=False, attrs = False):
         args = dict(
@@ -209,10 +175,28 @@ class Client(object):
             getlink = getlink,
             attrs = attrs
         )
-        with self.lock:
-            self._ser.send(args)
-            return self._ser.recv()
+        return self._ser.call(args)
+
+    def modify(self, fileName, path, name, value, attrs = False):
+        args = dict(
+            func = "modify",
+            fileName = fileName,
+            path = path,
+            name = name,
+            value = value,
+            attrs = attrs
+        )
+        return self._ser.call(args)
+
+    def resize(self, fileName, path, size, axis):
+        args = dict(
+            func = "resize",
+            fileName = fileName,
+            path = path,
+            size = size,
+            axis = axis
+        )
+        return self._ser.call(args)
 
 
-from .h5proxy import Dataset,Group,File,Attributes        
 from .serializer import Serializer

@@ -1,24 +1,25 @@
 import h5py
-import zmq
 import numpy
 import cPickle as pickle
-import pdb
 import sys
 
 
 class Server(object):
     def __init__(self, interface="*", port=30572, heartbeat=None):
-        self._context = zmq.Context()
-        self._socket = self._context.socket(zmq.REP)
-        self._socket.bind("tcp://"+interface+":"+str(port))
-        self._heartbeat = heartbeat
-        # maximum interval between hearbeats
-        # corresponds to the socket timeout interval in miliseconds
-        self._hbInterval = 10000
-        if(self._heartbeat):            
-            self._socket.set(zmq.RCVTIMEO, self._hbInterval)
+        self._socket = None
+        if(interface):
+            import zmq
+            self._context = zmq.Context()
+            self._socket = self._context.socket(zmq.REP)
+            self._socket.bind("tcp://"+interface+":"+str(port))
+            self._heartbeat = heartbeat
+            # maximum interval between hearbeats
+            # corresponds to the socket timeout interval in miliseconds
+            self._hbInterval = 10000
+            self._ser = Serializer(self, self._socket)
+            if(self._heartbeat):            
+                self._socket.set(zmq.RCVTIMEO, self._hbInterval)
         self.files = {}
-        self._ser = Serializer(self, self._socket)
     def start(self):    
         print "Starting server"
         while(True):
@@ -40,7 +41,7 @@ class Server(object):
             array = self.array, create_dataset = self.create_dataset,
             create_group = self.create_group, mode = self.mode, 
             contains = self.contains, values = self.values,
-            items = self.items, get = self.get)
+            items = self.items, get = self.get, modify = self.modify, resize = self.resize)
         # Get the function name to be called from the 'func' key
         fname = fc.pop('func')
         # Append eventual extra keyword arguments to the fc dictionary of arguments
@@ -55,16 +56,24 @@ class Server(object):
             if(fname == 'attrs'):
                 if 'path' not in fc:
                     fc['path'] = None
-                self._ser.send(functions[fname](**fc),fc['fileName'],fc['path'])
+                if(self._socket):
+                    self._ser.send(functions[fname](**fc),fc['fileName'],fc['path'])
+                else:
+                    return functions[fname](**fc)
             else:
-                self._ser.send(functions[fname](**fc))        
-        except EnvironmentError:
-#        except:
-            ret = dict()
-            ret['className'] = 'exception'
-            ret['exc_type'] = sys.exc_type
-            ret['exc_value'] = sys.exc_value
-            self._ser.send(ret)
+                if(self._socket):
+                    self._ser.send(functions[fname](**fc))
+                else:
+                    return functions[fname](**fc)
+        except:
+            if(self._socket):
+                ret = dict()
+                ret['className'] = 'exception'
+                ret['exc_type'] = sys.exc_type
+                ret['exc_value'] = sys.exc_value
+                self._ser.send(ret)
+            else:
+                raise
         return
          
     def resolve(self, fileName, path = None, attrs = None):
@@ -138,6 +147,12 @@ class Server(object):
         else:
             return self.resolve(fileName, path, attrs).get(name, default, getclass, getlink)
 
+    def modify(self,fileName, path, name, value, attrs):
+        return self.resolve(fileName, path, attrs).modify(name, value)
+
+    def resize(self,fileName, path, size, axis):
+        return self.resolve(fileName, path).resize(size, axis)
+            
 
 from .h5proxy import Dataset,Group,File,Attributes 
 from .serializer import Serializer

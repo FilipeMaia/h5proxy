@@ -1,13 +1,33 @@
 import numpy
 import h5py
 import cPickle as pickle
-import zmq
-import pdb
+
 
 class Serializer(object):
-    def __init__(self, parent, socket):
-        self._socket = socket
+    def __init__(self, parent, socket = None):
         self._parent = parent
+        self._socket = socket
+        if(socket):
+            import threading
+
+            self.lock = threading.Lock()
+        else:
+            # Use an internal server is there's no socket
+            self._server = Server(None)
+            
+
+    def call(self, data):
+        if(self._socket):
+            with self.lock:
+                self.send(data)
+                return self.recv()
+        else:
+            if(data['func'] == 'attrs'):
+                ret, _ = self._serialize(self._server.handleRPC(data),[],data['fileName'],data['path'])
+                return self._deserialize(ret)
+            else:
+                ret, _ = self._serialize(self._server.handleRPC(data),[],None,None)
+                return self._deserialize(ret)
 
     def recv(self):
         data = pickle.loads(self._socket.recv())
@@ -28,7 +48,7 @@ class Serializer(object):
                     exc_type = data['exc_type']
                     exc_value = data['exc_value']
                     raise exc_type(exc_value)
-                elif(data['className'] == "ndarray"):
+                elif(data['className'] == "ndarray" and self._socket):
                     d = self._socket.recv()
                     data = numpy.frombuffer(buffer(d), dtype=data['dtype']).reshape(data['shape'])
                 elif(data['className'] == "File"):
@@ -51,14 +71,12 @@ class Serializer(object):
     def send(self,data, fileName = None, path = None):
         data, arrays = self._serialize(data, [], fileName, path)
         flags = 0
-        print "%d arrays to send" % (len(arrays))
         if(len(arrays)):
+            import zmq
             flags = zmq.SNDMORE
-        print "Sending data"
         self._socket.send(pickle.dumps(data), flags)
 
         for i in range(len(arrays)):
-            print "Sending array"
             # When sending the last array change the flag back
             if(i == len(arrays) -1):
                 flags = 0
@@ -89,7 +107,7 @@ class Serializer(object):
                 fileName = data.file.filename,
                 path = ''
             )
-        elif isinstance(data, numpy.ndarray):
+        elif isinstance(data, numpy.ndarray) and self._socket:
             arrays.append(data)
             data = dict(
                 className = "ndarray",
@@ -109,3 +127,4 @@ class Serializer(object):
         return data, arrays
 
 from .h5proxy import Dataset,Group,File,Attributes 
+from .server import Server
