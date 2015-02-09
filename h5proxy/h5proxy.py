@@ -266,7 +266,7 @@ class ExternalLink(object):
         self._path = str(path)
     @property
     def filename(self):
-        return self.filename
+        return self._filename
     @property
     def path(self):
         return self._path
