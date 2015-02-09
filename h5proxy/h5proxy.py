@@ -76,12 +76,7 @@ class Group(Base):
        return self._client.call('name',fileName=self._fileName, path=self._path)
 
 
-
-
-
-
-
-class Attributes(Base):
+class Attributes(object):
     def __init__(self, client, fileName, path):
         self._client = client
         self._fileName = fileName
@@ -253,6 +248,31 @@ class Dataset(Base):
        return self._client.call('name',fileName=self._fileName, path=self._path)
 
     
+class HardLink(object):
+    pass
+    
+class SoftLink(object):
+    def __init__(self, path):
+        self._path = str(path)
+    @property
+    def path(self):
+        return self._path
+    def __repr__(self):
+        return '<SoftLink to "%s">' % self.path
+
+class ExternalLink(object):
+    def __init__(self, filename, path):
+        self._filename = str(filename)
+        self._path = str(path)
+    @property
+    def filename(self):
+        return self.filename
+    @property
+    def path(self):
+        return self._path
+    def __repr__(self):
+        return '<ExternalLink to "%s" in file "%s"' % (self.path, self.filename)
+
 from .client import Client
 from .server import Server
         

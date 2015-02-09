@@ -113,16 +113,16 @@ class Server(object):
     def file_close(self, fileName):
         return  self.resolve(fileName).close()
 
-    def getitem(self, fileName, path, args, attrs):   
+    def getitem(self, fileName, path, args, attrs = None):   
         return self.resolve(fileName,path, attrs)[args]
 
     def array(self, fileName, path, dtype):
         return numpy.array(self.resolve(fileName,path), dtype = dtype)
 
-    def setitem(self, fileName, path, args, vals, attrs):
+    def setitem(self, fileName, path, args, vals, attrs = None):
         self.resolve(fileName,path, attrs)[args] = vals
                 
-    def keys(self, fileName, path, attrs):
+    def keys(self, fileName, path, attrs = None):
         return self.resolve(fileName,path, attrs).keys()
         
     def dtype(self,fileName,path):
@@ -134,10 +134,10 @@ class Server(object):
     def attrs(self,fileName,path):
         return self.resolve(fileName,path).attrs
 
-    def len(self,fileName,path,attrs):
+    def len(self, fileName, path, attrs = None):
         return len(self.resolve(fileName,path,attrs))
 
-    def repr(self,fileName,path,attrs):
+    def repr(self, fileName, path, attrs = None):
         return repr(self.resolve(fileName,path,attrs))
 
     def mode(self,fileName):
@@ -149,16 +149,16 @@ class Server(object):
     def values(self,fileName, path, attrs=None):
         return self.resolve(fileName, path, attrs).values()
 
-    def items(self,fileName, path, attrs):
+    def items(self,fileName, path, attrs = None):
         return self.resolve(fileName, path, attrs).items()
 
-    def get(self,fileName, path, name, default, getclass, getlink, attrs):
+    def get(self,fileName, path, name, default, getclass, getlink, attrs = None):
         if(attrs):
             return self.resolve(fileName, path, attrs).get(name, default)
         else:
             return self.resolve(fileName, path, attrs).get(name, default, getclass, getlink)
 
-    def modify(self,fileName, path, name, value, attrs):
+    def modify(self,fileName, path, name, value, attrs = None):
         return self.resolve(fileName, path, attrs).modify(name, value)
 
     def resize(self,fileName, path, size, axis):
@@ -221,7 +221,7 @@ class Server(object):
     def delitem(self, fileName, path, name, attrs=None):
         return self.resolve(fileName, path, attrs).__delitem__(name)
 
-    def create(self, fileName, path, name, data, shape, dtype, attrs):
+    def create(self, fileName, path, name, data, shape, dtype, attrs = None):
         return self.resolve(fileName, path, attrs).create(name, data, shape, dtype)
 
     def move(self, fileName, path, source, dest):
